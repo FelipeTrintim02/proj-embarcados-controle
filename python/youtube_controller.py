@@ -3,11 +3,16 @@ import serial
 import argparse
 import time
 import logging
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+
+# devices = AudioUtilities.GetSpeakers()
+# interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+# volume = cast(.interface, POINTER(IAudioEndpointVolume))
 
 
 class MyControllerMap:
     def __init__(self):
-        self.button = {'A': 'L', 'B': 'K', 'C': 'J'} 
+        self.button = {'A': 'left', 'B': 'SPACE', 'C': 'right', 'D': 'up', 'E': 'down'} 
 
 class SerialControllerInterface:
     # Protocolo
@@ -34,13 +39,21 @@ class SerialControllerInterface:
         if data == b'1':
             print("datab1")
             logging.info("KEYDOWN A")
-            pyautogui.keyDown(self.mapping.button['A'])
+            # pyautogui.keyDown(self.mapping.button['A'])
+            pyautogui.hotkey('ctrl', self.mapping.button['A'])
         if data == b'2':
             logging.info("KEYDOWN B")
             pyautogui.keyDown(self.mapping.button['B'])
         if data == b'3':
             logging.info("KEYDOWN C")
-            pyautogui.keyDown(self.mapping.button['C'])
+            # pyautogui.keyDown(self.mapping.button['C'])
+            pyautogui.hotkey('ctrl', self.mapping.button['C'])
+        if data == b'4':
+            logging.info("KEYDOWN D")
+            pyautogui.hotkey('ctrl', self.mapping.button['D'])
+        if data == b'5':
+            logging.info("KEYDOWN E")
+            pyautogui.hotkey('ctrl', self.mapping.button['E'])
         if data == b'0':
             logging.info("KEYUP A")
             pyautogui.keyUp(self.mapping.button['A'])
@@ -48,6 +61,11 @@ class SerialControllerInterface:
             pyautogui.keyUp(self.mapping.button['B'])
             logging.info("KEYUP C")
             pyautogui.keyUp(self.mapping.button['C'])
+            logging.info("KEYUP D")
+            pyautogui.keyUp(self.mapping.button['D'])
+            logging.info("KEYUP E")
+            pyautogui.keyUp(self.mapping.button['E'])
+
 
         self.incoming = self.ser.read()
 
@@ -59,7 +77,8 @@ class DummyControllerInterface:
     def update(self):
         print("update")
         time.sleep(1)
-        pyautogui.keyDown(self.mapping.button['A'])
+        # pyautogui.keyDown(self.mapping.button['A'])
+        pyautogui.hotkey('ctrl', self.mapping.button['A'])
         time.sleep(1)
         pyautogui.keyUp(self.mapping.button['A'])
         time.sleep(1)
@@ -67,12 +86,25 @@ class DummyControllerInterface:
         time.sleep(1)
         pyautogui.keyUp(self.mapping.button['B'])
         time.sleep(1)
+        pyautogui.hotkey('ctrl', self.mapping.button['C'])
+        time.sleep(1)
+        pyautogui.keyUp(self.mapping.button['C'])
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', self.mapping.button['D'])
+        time.sleep(1)
+        pyautogui.keyUp(self.mapping.button['D'])
+        time.sleep(1)
+        pyautogui.hotkey('ctrl', self.mapping.button['E'])
+        time.sleep(1)
+        pyautogui.keyUp(self.mapping.button['E'])
+        time.sleep(1)
+
 
 
 if __name__ == '__main__':
     interfaces = ['dummy', 'serial']
     argparse = argparse.ArgumentParser()
-    argparse.add_argument('serial_port', type=str)
+    # argparse.add_argument('serial_port', type=str)
     argparse.add_argument('-b', '--baudrate', type=int, default=115200)
     argparse.add_argument('-c', '--controller_interface', type=str, default='serial', choices=interfaces)
     argparse.add_argument('-d', '--debug', default=False, action='store_true')
@@ -80,11 +112,11 @@ if __name__ == '__main__':
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
 
-    print("Connection to {} using {} interface ({})".format(args.serial_port, args.controller_interface, args.baudrate))
+    print("Connection to {} using {} interface ({})".format("COM3", args.controller_interface, args.baudrate))
     if args.controller_interface == 'dummy':
         controller = DummyControllerInterface()
     else:
-        controller = SerialControllerInterface(port=args.serial_port, baudrate=args.baudrate)
+        controller = SerialControllerInterface(port="COM3", baudrate=args.baudrate)
 
     while True:
         controller.update()
