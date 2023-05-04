@@ -12,7 +12,7 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
 class MyControllerMap:
     def __init__(self):
-        self.button = {'A': 'left', 'B': 'SPACE', 'C': 'right', 'D': 'up', 'E': 'down'} 
+        self.button = {'A': 'left', 'B': 'SPACE', 'C': 'right', 'D': 'up', 'E': 'down', 'F': 'r'} 
 
 class SerialControllerInterface:
     # Protocolo
@@ -54,6 +54,9 @@ class SerialControllerInterface:
         if data == b'5':
             logging.info("KEYDOWN E")
             pyautogui.hotkey('ctrl', self.mapping.button['E'])
+        if data == b'6':
+            logging.info("KEYDOWN F")
+            pyautogui.hotkey('ctrl', self.mapping.button['F'])
         if data == b'0':
             logging.info("KEYUP A")
             pyautogui.keyUp(self.mapping.button['A'])
@@ -65,6 +68,8 @@ class SerialControllerInterface:
             pyautogui.keyUp(self.mapping.button['D'])
             logging.info("KEYUP E")
             pyautogui.keyUp(self.mapping.button['E'])
+            logging.info("KEYUP F")
+            pyautogui.keyUp(self.mapping.button['F'])
 
 
         self.incoming = self.ser.read()
@@ -98,6 +103,11 @@ class DummyControllerInterface:
         time.sleep(1)
         pyautogui.keyUp(self.mapping.button['E'])
         time.sleep(1)
+        pyautogui.hotkey('ctrl', self.mapping.button['F'])
+        time.sleep(1)
+        pyautogui.keyUp(self.mapping.button['F'])
+        time.sleep(1)
+        
 
 
 

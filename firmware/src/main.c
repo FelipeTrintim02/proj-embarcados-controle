@@ -35,6 +35,10 @@
 #define BUT_IDX3      30
 #define BUT_IDX_MASK3 (1 << BUT_IDX3)
 
+#define BUT_PIO4      PIOC
+#define BUT_PIO_ID4   ID_PIOC
+#define BUT_IDX4      17
+#define BUT_IDX_MASK4 (1 << BUT_IDX4)
 
 #define AFEC_POT AFEC0
 #define AFEC_POT_ID ID_AFEC0
@@ -153,12 +157,14 @@ void io_init(void) {
 	pmc_enable_periph_clk(BUT_PIO_ID);
 	pmc_enable_periph_clk(BUT_PIO_ID2);
 	pmc_enable_periph_clk(BUT_PIO_ID3);
+	pmc_enable_periph_clk(BUT_PIO_ID4);
 
 	// Configura Pinos
 	pio_configure(LED_PIO, PIO_OUTPUT_0, LED_IDX_MASK, PIO_DEFAULT);
 	pio_configure(BUT_PIO, PIO_INPUT, BUT_IDX_MASK, PIO_PULLUP);
 	pio_configure(BUT_PIO2, PIO_INPUT, BUT_IDX_MASK2, PIO_PULLUP);
 	pio_configure(BUT_PIO3, PIO_INPUT, BUT_IDX_MASK3, PIO_PULLUP);
+	pio_configure(BUT_PIO4, PIO_INPUT, BUT_IDX_MASK4, PIO_PULLUP);
 
 }
 
@@ -313,7 +319,7 @@ static void task_proc(void *pvParameters){
   int v[2] = {};
   while (1) {
     if(xQueueReceive(xQueuePot, &adc, portMAX_DELAY)) {
-		printf("Potenciometro: %d \n, ", adc.value);
+		// printf("Potenciometro: %d \n, ", adc.value);
 	  v[0] = v[1];
 	  v[1] = adc.value;
 	  if(v[1] > (v[0]+100)){
@@ -356,6 +362,9 @@ void task_bluetooth(void) {
 		} 
 		else if (pio_get (BUT_PIO3, PIO_INPUT, BUT_IDX_MASK3) == 0) {
 			button1 = '3';
+		}
+		else if (pio_get (BUT_PIO4, PIO_INPUT, BUT_IDX_MASK4) == 0) {
+			button1 = '6';
 		}
 		else if (xQueueReceive(xQueueValue, &valor, 0) == pdTRUE) {
 			if (valor == 1) {
