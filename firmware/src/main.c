@@ -40,6 +40,11 @@
 #define BUT_IDX4      17
 #define BUT_IDX_MASK4 (1 << BUT_IDX4)
 
+#define BUT_PIO5      PIOA
+#define BUT_PIO_ID5   ID_PIOA
+#define BUT_IDX5      4
+#define BUT_IDX_MASK5 (1 << BUT_IDX5)
+
 #define AFEC_POT AFEC0
 #define AFEC_POT_ID ID_AFEC0
 #define AFEC_POT_CHANNEL 0 // Canal do pino PD30
@@ -95,6 +100,7 @@ typedef struct {
 } adcData;
 
 int valor = 0;
+int flag5 = 1;
 /************************************************************************/
 /* RTOS application HOOK                                                */
 /************************************************************************/
@@ -146,6 +152,9 @@ void vTimerCallback(TimerHandle_t xTimer) {
   afec_start_software_conversion(AFEC_POT);
 }
 
+void but5_callback(void) {
+  flag5 = !flag5;
+}
 // /************************************************************************/
 // /* funcoes                                                              */
 // /************************************************************************/
@@ -165,14 +174,31 @@ void io_init(void) {
 	pio_configure(BUT_PIO2, PIO_INPUT, BUT_IDX_MASK2, PIO_PULLUP);
 	pio_configure(BUT_PIO3, PIO_INPUT, BUT_IDX_MASK3, PIO_PULLUP);
 	pio_configure(BUT_PIO4, PIO_INPUT, BUT_IDX_MASK4, PIO_PULLUP);
+	pio_configure(BUT_PIO5, PIO_INPUT, BUT_IDX_MASK5, PIO_PULLUP);
 
 	// Ativa interrupt
 	pio_enable_interrupt(BUT_PIO, BUT_IDX_MASK);
 	pio_enable_interrupt(BUT_PIO2, BUT_IDX_MASK2);
 	pio_enable_interrupt(BUT_PIO3, BUT_IDX_MASK3);
 	pio_enable_interrupt(BUT_PIO4, BUT_IDX_MASK4);
+	pio_enable_interrupt(BUT_PIO5, BUT_IDX_MASK5);
 
-	
+	//callbacks
+	pio_handler_set(BUT_PIO5, BUT_PIO_ID5, BUT_IDX_MASK5, PIO_IT_FALL_EDGE, but5_callback);
+
+	// Configura NVIC para receber interrupcoes do PIO do botao
+	// com prioridade 4 (quanto mais próximo de 0 maior)
+	NVIC_EnableIRQ(BUT_PIO_ID);
+	NVIC_SetPriority(BUT_PIO_ID, 4);
+	NVIC_EnableIRQ(BUT_PIO_ID2);
+	NVIC_SetPriority(BUT_PIO_ID2, 4);
+	NVIC_EnableIRQ(BUT_PIO_ID3);
+	NVIC_SetPriority(BUT_PIO_ID3, 4);
+	NVIC_EnableIRQ(BUT_PIO_ID4);
+	NVIC_SetPriority(BUT_PIO_ID4, 4);
+	NVIC_EnableIRQ(BUT_PIO_ID5);
+	NVIC_SetPriority(BUT_PIO_ID5, 4);
+
 
 }
 
@@ -332,13 +358,18 @@ static void task_proc(void *pvParameters){
 	  v[1] = adc.value;
 	  if(v[1] > (v[0]+100)){
 		valor = 1;
-		BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-		xQueueSendFromISR(xQueueValue, &valor, &xHigherPriorityTaskWoken);
+		if(flag5){
+			BaseType_t xHigherPriorityTaskWoken = pdTRUE;
+			xQueueSendFromISR(xQueueValue, &valor, &xHigherPriorityTaskWoken);
+		}
+		
 	  }
 	  else if(v[1] < (v[0]-100)){
 		valor = 0;
-		BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-		xQueueSendFromISR(xQueueValue, &valor, &xHigherPriorityTaskWoken);
+		if(flag5){
+			BaseType_t xHigherPriorityTaskWoken = pdTRUE;
+			xQueueSendFromISR(xQueueValue, &valor, &xHigherPriorityTaskWoken);
+		}
 	  }
 	}
   }
@@ -362,24 +393,30 @@ void task_bluetooth(void) {
 	// Task não deve retornar.
 	while(1) {
 		// atualiza valor do botão
-		if(pio_get(BUT_PIO, PIO_INPUT, BUT_IDX_MASK) == 0) {
-			button1 = '1';
-		} 
-		else if (pio_get (BUT_PIO2, PIO_INPUT, BUT_IDX_MASK2) == 0) {
-			button1 = '2';
-		} 
-		else if (pio_get (BUT_PIO3, PIO_INPUT, BUT_IDX_MASK3) == 0) {
-			button1 = '3';
-		}
-		else if (pio_get (BUT_PIO4, PIO_INPUT, BUT_IDX_MASK4) == 0) {
-			button1 = '6';
-		}
-		else if (xQueueReceive(xQueueValue, &valor, 0) == pdTRUE) {
-			if (valor == 1) {
-				button1 = '4';
+		if(flag5){
+			printf("ligado");
+			if(pio_get(BUT_PIO, PIO_INPUT, BUT_IDX_MASK) == 0) {
+				button1 = '1';
+			} 
+			else if (pio_get (BUT_PIO2, PIO_INPUT, BUT_IDX_MASK2) == 0) {
+				button1 = '2';
+			} 
+			else if (pio_get (BUT_PIO3, PIO_INPUT, BUT_IDX_MASK3) == 0) {
+				button1 = '3';
+			}
+			else if (pio_get (BUT_PIO4, PIO_INPUT, BUT_IDX_MASK4) == 0) {
+				button1 = '6';
+			}
+			else if (xQueueReceive(xQueueValue, &valor, 0) == pdTRUE) {
+				if (valor == 1) {
+					button1 = '4';
+				}
+				else {
+					button1 = '5';
+				}
 			}
 			else {
-				button1 = '5';
+				button1 = '0';
 			}
 		}
 		else {
