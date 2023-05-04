@@ -166,6 +166,14 @@ void io_init(void) {
 	pio_configure(BUT_PIO3, PIO_INPUT, BUT_IDX_MASK3, PIO_PULLUP);
 	pio_configure(BUT_PIO4, PIO_INPUT, BUT_IDX_MASK4, PIO_PULLUP);
 
+	// Ativa interrupt
+	pio_enable_interrupt(BUT_PIO, BUT_IDX_MASK);
+	pio_enable_interrupt(BUT_PIO2, BUT_IDX_MASK2);
+	pio_enable_interrupt(BUT_PIO3, BUT_IDX_MASK3);
+	pio_enable_interrupt(BUT_PIO4, BUT_IDX_MASK4);
+
+	
+
 }
 
 static void configure_console(void) {
